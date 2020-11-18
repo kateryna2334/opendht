@@ -1,11 +1,13 @@
 cmake_minimum_required (VERSION 3.1)
+project (opendht)
+
 include(CMakePackageConfigHelpers)
 include(CMakeDependentOption)
 include(FindPkgConfig)
+include(cmake/CheckAtomic.cmake)
 
-project (opendht)
 set (opendht_VERSION_MAJOR 2)
-set (opendht_VERSION_MINOR 1.6)
+set (opendht_VERSION_MINOR 1.8)
 set (opendht_VERSION ${opendht_VERSION_MAJOR}.${opendht_VERSION_MINOR})
 set (PACKAGE_VERSION ${opendht_VERSION})
 set (VERSION "${opendht_VERSION}")
@@ -82,8 +84,8 @@ if (NOT MSVC)
             # https://cmake.org/cmake/help/latest/module/FindOpenSSL.html
             pkg_search_module(OPENSSL REQUIRED openssl)
             if (OPENSSL_FOUND)
-                message(STATUS "Found OpenSSL ${OPENSSL_VERSION}")
-                include_directories(${OPENSSL_INCLUDE_DIRS})
+                message(STATUS "Found OpenSSL ${OPENSSL_VERSION} ${OPENSSL_INCLUDE_DIRS}")
+                include_directories(SYSTEM ${OPENSSL_INCLUDE_DIRS})
                 link_directories (${OPENSSL_LIBRARY_DIRS})
             else ()
                 message(SEND_ERROR "OpenSSL is required for DHT proxy as specified")
@@ -300,9 +302,11 @@ if (OPENDHT_HTTP)
   list (APPEND opendht_HEADERS
     include/opendht/proxy.h
     include/opendht/http.h
+    src/compat/os_cert.h
   )
   list (APPEND opendht_SOURCES
     src/http.cpp
+    src/compat/os_cert.cpp
   )
 endif ()
 
@@ -323,13 +327,8 @@ if(OPENDHT_ARGON2)
     include_directories(argon2/include/)
 endif()
 
-# cross-platform compatibility sources
-set (COMPAT_DIR ${PROJECT_SOURCE_DIR}/src/compat/)
-list (APPEND opendht_SOURCES ${COMPAT_DIR}/os_cert.cpp)
-
 if (MSVC)
-    set (MSC_COMPAT_DIR ${COMPAT_DIR}/msvc/)
-    list (APPEND opendht_SOURCES ${MSC_COMPAT_DIR}/unistd.h)
+    list (APPEND opendht_HEADERS src/compat/msvc/unistd.h)
 endif ()
 
 # Targets
